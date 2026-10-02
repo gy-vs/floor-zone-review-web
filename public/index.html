@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>楼层分区核对工作台</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>楼层分区核对工作台</strong>
+      <span id="versionBadge" class="badge badge-saved">加载中…</span>
+      <span id="dirtyBadge" class="badge badge-dirty" style="display:none">● 有未保存改动</span>
+    </div>
+    <div class="top-actions">
+      <button id="btnCheckSaved" class="btn" title="对当前已保存版本运行服务端几何检查">对保存版本运行检查</button>
+      <button id="btnSave" class="btn btn-primary" disabled>保存草稿</button>
+      <button id="btnConfirm" class="btn btn-deliver" disabled>确认交付</button>
+      <button id="btnHistory" class="btn">版本历史</button>
+    </div>
+  </header>
+
+  <div id="conflictBanner" class="banner banner-warn" style="display:none">
+    <div>
+      <strong>保存冲突：</strong><span id="conflictText"></span>
+      你的草稿已保留在本地，服务端版本没有被覆盖。
+    </div>
+    <div class="banner-actions">
+      <button id="btnConflictShowServer" class="btn btn-sm">查看服务端版本</button>
+      <button id="btnConflictShowMine" class="btn btn-sm">查看我的草稿</button>
+      <button id="btnConflictResave" class="btn btn-sm btn-primary">对照后以我的草稿另存新版本</button>
+      <button id="btnConflictDiscard" class="btn btn-sm">放弃我的草稿</button>
+    </div>
+  </div>
+
+  <div id="localDraftBanner" class="banner banner-info" style="display:none">
+    <div><strong>检测到本机未保存草稿</strong>（基于保存版本 <span id="localDraftBase"></span>），它从未被提交，也不代表已交付结果。</div>
+    <div class="banner-actions">
+      <button id="btnRestoreDraft" class="btn btn-sm btn-primary">恢复草稿</button>
+      <button id="btnDropDraft" class="btn btn-sm">丢弃</button>
+    </div>
+  </div>
+
+  <div id="historyBanner" class="banner banner-readonly" style="display:none">
+    <div>正在<strong>只读查看历史版本 <span id="historyVersionNo"></span></strong>，编辑不会写入该版本。</div>
+    <div class="banner-actions">
+      <button id="btnHistoryExit" class="btn btn-sm">返回当前版本继续编辑</button>
+    </div>
+  </div>
+
+  <main class="layout">
+    <aside class="leftpanel">
+      <section class="card">
+        <h3>绘制工具</h3>
+        <div class="tool-grid">
+          <label><input type="radio" name="tool" value="select" checked /> 选择 / 调整</label>
+          <label><input type="radio" name="tool" value="zone" /> 画用途分区</label>
+          <label><input type="radio" name="tool" string="true" value="unusable" /> 画不可用区域</label>
+          <label><input type="radio" name="tool" value="floor" /> 重画楼层外轮廓</label>
+        </div>
+        <div id="drawHint" class="hint">拖空白处平移，滚轮以光标为中心缩放；双击边可加顶点。</div>
+        <div id="drawControls" style="display:none">
+          <div class="hint" id="drawStatus">单击依次放置顶点（米坐标）。</div>
+          <div class="row">
+            <button id="btnFinishDraw" class="btn btn-sm btn-primary">完成（回车/双击）</button>
+            <button id="btnUndoPoint" class="btn btn-sm">撤销顶点</button>
+            <button id="btnCancelDraw" class="btn btn-sm">取消（Esc）</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="selectionCard">
+        <h3>选中对象</h3>
+        <div id="selectionBody" class="hint">未选中。在图上点击分区、不可用区域或楼层边界。</div>
+      </section>
+
+      <section class="card">
+        <h3>视图</h3>
+        <div class="row">
+          <button id="btnZoomIn" class="btn btn-sm">放大</button>
+          <button id="btnZoomOut" class="btn btn-sm">缩小</button>
+          <button id="btnZoomFit" class="btn btn-sm">适应楼层</button>
+        </div>
+        <div class="hint">坐标与面积均以米 / 平方米计，缩放浏览器窗口不改变任何计算。</div>
+      </section>
+    </aside>
+
+    <section class="canvas-wrap">
+      <svg id="plan" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="coordReadout" class="coord-readout">— , —</div>
+      <div id="checkSourceTag" class="source-tag"></div>
+    </section>
+
+    <aside class="rightpanel">
+      <div class="tabs">
+        <button class="tab active" data-tab="metrics">面积与问题</button>
+        <button class="tab" data-tab="versions">版本与确认</button>
+      </div>
+
+      <div class="tabpane" id="pane-metrics">
+        <section class="card">
+          <h3>面积总账（m²）</h3>
+          <table class="metrics" id="metricsTable">
+            <tbody></tbody>
+          </table>
+        </section>
+        <section class="card">
+          <h3>各分区读数</h3>
+          <table class="zones" id="zoneTable">
+            <thead><tr>
+              <th>分区</th><th>标称</th><th>出界</th><th>压不可用</th><th>重复</th><th>有效</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </section>
+        <section class="card">
+          <h3>问题区域</h3>
+          <div id="problemList" class="problem-list"></div>
+        </section>
+      </div>
+
+      <div class="tabpane" id="pane-versions" style="display:none">
+        <section class="card">
+          <h3>当前保存版本</h3>
+          <div id="savedInfo" class="hint"></div>
+        </section>
+        <section class="card">
+          <h3>已确认交付</h3>
+          <div id="confirmedInfo" class="hint"></div>
+        </section>
+        <section class="card">
+          <h3>版本历史</h3>
+          <div id="versionList" class="version-list"></div>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <div id="modal" class="modal" style="display:none">
+    <div class="modal-box">
+      <h3 id="modalTitle"></h3>
+      <div id="modalBody"></div>
+      <div class="modal-actions">
+        <button id="modalCancel" class="btn">取消</button>
+        <button id="modalOk" class="btn btn-primary">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

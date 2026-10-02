@@ -1,0 +1,14 @@
+{
+  "name": "floor-zoning-review",
+  "version": "1.0.0",
+  "description": "楼层分区核对工作台：米坐标平面编辑 + 后端独立几何判定（重叠/出界/压不可用/未分配）+ 版本与确认",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "polygon-clipping": "^0.15.3"
+  }
+}
