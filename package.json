@@ -1,0 +1,18 @@
+{
+  "name": "floor-zone-review",
+  "version": "1.0.0",
+  "description": "本地运行的楼层用途分区审阅工作台：米坐标平面图、几何核对、版本保存与确认交付",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/",
+    "verify:browser": "node scripts/verify-browser.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "polygon-clipping": "^0.15.7"
+  }
+}

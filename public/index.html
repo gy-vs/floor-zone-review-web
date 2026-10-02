@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>楼层用途分区审阅工作台</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "polygon-clipping": "/vendor/polygon-clipping.esm.js",
+        "splaytree": "/vendor/splaytree.js",
+        "robust-predicates": "/vendor/robust-predicates/orient2d.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">楼层分区审阅</div>
+    <div class="view-tabs">
+      <button class="tab active" data-view="draft">编辑草稿</button>
+      <button class="tab" data-view="saved">服务端已保存版本</button>
+      <button class="tab" data-view="confirmed">已确认交付版本</button>
+    </div>
+    <div class="who">
+      修改人 <input id="savedBy" maxlength="20" placeholder="姓名" />
+    </div>
+  </header>
+
+  <div id="banner" class="banner hidden"></div>
+
+  <main id="workspace">
+    <div id="canvas-wrap">
+      <div id="toolbar">
+        <span class="tool-group">
+          <button id="tool-select" class="tool active" title="选择/拖动顶点 (Esc)">选择</button>
+          <button id="tool-floor" class="tool" title="重绘楼层外轮廓（矩形或多边形）">楼层外轮廓</button>
+          <button id="tool-unusable" class="tool">＋ 不可用区域</button>
+          <button id="tool-zone" class="tool">＋ 用途分区</button>
+        </span>
+        <span class="tool-group">
+          <label class="chk"><input type="checkbox" id="snap" checked /> 顶点吸附 0.05m</label>
+          <label class="chk"><input type="checkbox" id="show-issues" checked /> 显示问题区域</label>
+          <label class="chk"><input type="checkbox" id="show-grid" checked /> 网格</label>
+        </span>
+        <span class="tool-group" id="draw-actions" style="display:none">
+          <button id="draw-finish" class="primary">完成绘制</button>
+          <button id="draw-cancel">取消</button>
+          <span class="hint">依次点击添加顶点，至少 3 个</span>
+        </span>
+        <span class="spacer"></span>
+        <button id="load-demo">载入 10×8 核对示例</button>
+      </div>
+
+      <div id="stage">
+        <svg id="plan" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="hatch-unusable" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="scale(1,-1)">
+              <path d="M-2,2 l4,-4 M0,8 l8,-8 M6,10 l4,-4" stroke="#6b7280" stroke-width="1.2"/>
+            </pattern>
+            <pattern id="hatch-outside" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="scale(1,-1)">
+              <path d="M0,7 L7,0" stroke="#dc2626" stroke-width="1.6"/>
+            </pattern>
+            <pattern id="hatch-overlap" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="scale(1,-1)">
+              <path d="M-2,2 l4,-4 M0,9 l9,-9 M7,11 l4,-4" stroke="#d97706" stroke-width="1.4"/>
+            </pattern>
+          </defs>
+          <g id="layer-grid"></g>
+          <g id="layer-floor"></g>
+          <g id="layer-unusable"></g>
+          <g id="layer-zones"></g>
+          <g id="layer-issues"></g>
+          <g id="layer-edits"></g>
+          <g id="layer-labels"></g>
+        </svg>
+        <div id="scale-note"></div>
+      </div>
+    </div>
+
+    <aside id="panel">
+      <section id="section-status" class="card">
+        <h2>版本与检查</h2>
+        <div id="status-body"></div>
+        <div class="row">
+          <button id="btn-save" class="primary" disabled>保存草稿到服务端</button>
+          <button id="btn-confirm" disabled>确认交付此版本</button>
+        </div>
+        <div class="row">
+          <button id="btn-discard" class="ghost">放弃本地草稿</button>
+          <button id="btn-refresh" class="ghost">重新拉取服务端</button>
+        </div>
+      </section>
+
+      <section id="section-totals" class="card">
+        <h2>面积对账（平方米，米坐标）</h2>
+        <div id="totals-body"></div>
+      </section>
+
+      <section id="section-zones" class="card">
+        <h2>分区 / 区域</h2>
+        <div id="zones-body"></div>
+      </section>
+
+      <section id="section-issues" class="card">
+        <h2>问题区域 <span id="issue-count" class="count"></span></h2>
+        <div id="issues-body"></div>
+      </section>
+
+      <section id="section-vertices" class="card">
+        <h2>顶点编辑</h2>
+        <div id="vertices-body"><p class="muted">在图上选中一个分区或不可用区域后逐点编辑。</p></div>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
